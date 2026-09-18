@@ -41,4 +41,3 @@ app.listen(PORT, () => {
 });
 
 
-NoTrack AI — https://notrack.ai/
