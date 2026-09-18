@@ -1,43 +1,46 @@
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
-const path = require('path');
-
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Serve the frontend (index.html)
-app.use(express.static(path.join(__dirname, '.')));
+// Serve the static HTML
+app.use(express.static('public'));
 
-// Proxy route
-// This handles requests to /proxy/:url
-app.use('/proxy/:url(.*)', (req, res, next) => {
-    const url = req.params.url;
-    
-    // Basic validation to prevent abuse
-    if (!url) {
+// The Proxy Endpoint
+app.all('/proxy/:url(*)', (req, res, next) => {
+    // Get the target URL from the path
+    const targetUrl = req.params.url;
+
+    // Basic validation to prevent open proxy abuse
+    if (!targetUrl) {
         return res.status(400).send('Invalid URL');
     }
 
-    // Create the proxy middleware
+    // Create the proxy
     const proxy = createProxyMiddleware({
-        target: url,
+        target: targetUrl,
         changeOrigin: true,
-        // Rewrite the path to remove the /proxy prefix for the target
-        pathRewrite: {
-            '^/proxy': ''
+        pathRewrite: { '^/proxy': '' }, // Removes /proxy from the path so the site loads correctly
+        onProxyReq: (proxyReq, req) => {
+            // Ensure headers are set correctly
+            if (!proxyReq.getHeader('origin')) {
+                proxyReq.setHeader('origin', targetUrl);
+            }
         },
-        // Optional: Add headers if needed
-        headers: {
-            'User-Agent': 'CludiProxy/1.0'
+        onError: (err, req, res) => {
+            console.error('Proxy Error:', err);
+            res.status(500).send('Proxy Error');
         }
     });
 
-    // Handle the request
-    proxy(req, res, next);
+    // Handle both GET and POST requests
+    if (req.method === 'GET') {
+        proxy(req, res, next);
+    } else {
+        // For POST requests, we need to handle the body manually in serverless sometimes, 
+        // but for a basic proxy, GET is usually enough for browsing.
+        // If you need POST, you'd add body-parser middleware.
+        proxy(req, res, next);
+    }
 });
 
-app.listen(PORT, () => {
-    console.log(`Cludi proxy running on port ${PORT}`);
-});
-
-
+module.exports = app; // Vercel export format
