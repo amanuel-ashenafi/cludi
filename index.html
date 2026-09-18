@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cludi</title>
+    <style>
+        :root {
+            --bg-color: #0f0f13;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-color: #e0e0e0;
+            --accent-color: #6c5ce7;
+            --accent-hover: #5f4dc8;
+            --input-bg: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(108, 92, 231, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 200, 255, 0.05) 0%, transparent 40%);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 2rem;
+            background: linear-gradient(90deg, #fff, #a0a0a0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .search-box {
+            position: relative;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-box:focus-within {
+            border-color: var(--accent-color);
+            box-shadow: 0 8px 32px rgba(108, 92, 231, 0.2);
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-color);
+            font-size: 1.1rem;
+            padding: 10px 20px;
+        }
+
+        input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            margin-top: 1.5rem;
+            gap: 1rem;
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--text-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .toggle-btn.active {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: #fff;
+        }
+
+        .toggle-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--accent-color), #00c8ff);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.2s ease;
+        }
+
+        .loader.active {
+            transform: scaleX(1);
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2rem; }
+            .search-box { border-radius: 25px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="loader" id="loader"></div>
+
+    <div class="container">
+        <h1>cludi</h1>
+        
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search or enter URL..." autocomplete="off" autofocus>
+        </div>
+
+        <div class="toggle-container">
+            <button class="toggle-btn active" data-engine="google" onclick="setEngine('google')">Google</button>
+            <button class="toggle-btn" data-engine="duckduckgo" onclick="setEngine('duckduckgo')">DuckDuckGo</button>
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const loader = document.getElementById('loader');
+        let currentEngine = 'google';
+
+        function setEngine(engine) {
+            currentEngine = engine;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.engine === engine) {
+                    btn.classList.add('active');
+                }
+            });
+            searchInput.focus();
+        }
+
+        searchInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                const query = searchInput.value.trim();
+                if (query) {
+                    loader.classList.add('active');
+                    searchInput.blur();
+
+                    setTimeout(() => {
+                        window.location.href = buildUrl(query);
+                    }, 300);
+                }
+            }
+        });
+
+        function buildUrl(input) {
+            const isUrl = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)/.test(input);
+            
+            if (currentEngine === 'google') {
+                return `https://www.google.com/search?igu=1&q=${encodeURIComponent(input)}`;
+            } else if (currentEngine === 'duckduckgo') {
+                return `https://duckduckgo.com/?q=${encodeURIComponent(input)}`;
+            }
+        }
+
+        searchInput.focus();
+    </script>
+</body>
+</html>
